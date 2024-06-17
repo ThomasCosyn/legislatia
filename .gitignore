@@ -1,0 +1,6 @@
+.env
+test.py
+TO DO.txt
+__pycache__/*
+chroma
+services/__pycache__/*

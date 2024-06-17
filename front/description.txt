@@ -1,0 +1,3 @@
+LégislatIA permet de comparer les programmes politiques des partis pour les législatives 2024.  
+Les réponses sont sourcées sur :
+- Le [programme du Nouveau Front Populaire](https://assets.nationbuilder.com/nouveaufrontpopulaire/pages/1/attachments/original/1718371078/Programme-nouveaufrontpopulaire.pdf?1718371078)
