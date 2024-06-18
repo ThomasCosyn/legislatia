@@ -6,6 +6,7 @@ from langchain_mistralai import ChatMistralAI
 from langgraph.graph import END, StateGraph
 from services.prompts import SYSTEM_PROMPT
 from typing import TypedDict, Annotated
+from services.tools import QueryRenaissanceProgram
 from services.utils import format_messages_for_agent
 
 
@@ -67,7 +68,7 @@ def legislatia(message, history):
         max_tokens=1000
     )
     agent = Agent(model,
-                  tools=[],
+                  tools=[QueryRenaissanceProgram()],
                   system=SYSTEM_PROMPT)
     messages = format_messages_for_agent(message, history)
     result = agent.graph.invoke({'messages': messages})
