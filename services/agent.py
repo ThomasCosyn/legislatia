@@ -42,6 +42,8 @@ class Agent:
             messages = [SystemMessage(content=self.system)] + messages
         message = self.model.invoke(messages)
         return {'messages': [message]}
+        # message = self.model.stream(messages)
+        # yield {'messages': [message]}
 
     def take_action(self, state: AgentState):
         tool_calls = state['messages'][-1].tool_calls
@@ -60,7 +62,7 @@ class Agent:
         return {'messages': results}
 
 
-def legislatia(message, history):
+async def legislatia(message, history):
     model = ChatMistralAI(
         model="Mixtral-8x22B-Instruct-v0.1",
         api_key=os.getenv("OVH_AI_ENDPOINTS_ACCESS_TOKEN"),
@@ -71,5 +73,17 @@ def legislatia(message, history):
                   tools=[QueryRenaissanceProgram()],
                   system=SYSTEM_PROMPT)
     messages = format_messages_for_agent(message, history)
-    result = agent.graph.invoke({'messages': messages})
-    return result['messages'][-1].content
+    # result = agent.graph.invoke({'messages': messages})
+    # return result['messages'][-1].content
+    whole_response = ''
+    async for event in agent.graph.astream_events({"messages": messages}, version="v1"):
+        kind = event["event"]
+        if kind == "on_chat_model_stream":
+            content = event["data"]["chunk"].content
+            if content:
+                # Empty content in the context of OpenAI means
+                # that the model is asking for a tool to be invoked.
+                # So we only print non-empty content
+                # print(content, end="|")
+                whole_response += content
+                yield whole_response
