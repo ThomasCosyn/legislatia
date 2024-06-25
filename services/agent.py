@@ -1,11 +1,11 @@
 import operator
-import os
 
 from langchain_core.messages import AnyMessage, SystemMessage, ToolMessage
-from langchain_mistralai import ChatMistralAI
 from langgraph.graph import END, StateGraph
 from services.prompts import SYSTEM_PROMPT
 from typing import TypedDict, Annotated
+from services.custom_logger import logger
+from services.llm import LLM
 from services.tools import QueryRenaissanceProgram
 from services.utils import format_messages_for_agent
 
@@ -42,8 +42,6 @@ class Agent:
             messages = [SystemMessage(content=self.system)] + messages
         message = self.model.invoke(messages)
         return {'messages': [message]}
-        # message = self.model.stream(messages)
-        # yield {'messages': [message]}
 
     def take_action(self, state: AgentState):
         tool_calls = state['messages'][-1].tool_calls
@@ -63,22 +61,24 @@ class Agent:
 
 
 async def legislatia(message, history):
-    model = ChatMistralAI(
-        model="Mixtral-8x22B-Instruct-v0.1",
-        api_key=os.getenv("OVH_AI_ENDPOINTS_ACCESS_TOKEN"),
-        endpoint="https://mixtral-8x22b-instruct-v01.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1",  # noqa
-        max_tokens=1000
-    )
-    agent = Agent(model,
+    agent = Agent(LLM,
                   tools=[QueryRenaissanceProgram()],
                   system=SYSTEM_PROMPT)
     messages = format_messages_for_agent(message, history)
-    # result = agent.graph.invoke({'messages': messages})
-    # return result['messages'][-1].content
     whole_response = ''
-    async for event in agent.graph.astream_events({"messages": messages}, version="v1"):
+    async for event in agent.graph.astream_events(
+        {"messages": messages},
+        version="v1"
+    ):
         kind = event["event"]
-        if kind == "on_chat_model_stream":
+        if kind == "on_chain_start":
+            if (
+                event["name"] == "LangGraph"
+            ):
+                logger.info(
+                    f"Starting agent: {event['name']} with input: {event['data'].get('input')}"
+                )
+        elif kind == "on_chat_model_stream":
             content = event["data"]["chunk"].content
             if content:
                 # Empty content in the context of OpenAI means

@@ -4,3 +4,4 @@ TO DO.txt
 __pycache__/*
 chroma
 services/__pycache__/*
+log_python.log
